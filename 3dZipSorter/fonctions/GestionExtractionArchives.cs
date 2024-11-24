@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 
 namespace _3dZipSorter.fonctions
 {
-    public class GestionFichiers : IFonction
+    public class GestionExtractionArchives : IFonction
     {
         public void Executer(string sourceDirectory, string targetDirectory, Dictionary<string, string> placeholder)
         {

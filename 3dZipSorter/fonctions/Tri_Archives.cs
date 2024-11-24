@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace _3dZipSorter.fonctions
 {
-    internal class Trier_Archives : IFonction
+    public class Trier_Archives : IFonction
     {
         public void Executer(string dossierSource, string dossierDestination, Dictionary<string, string> fileExtensions)
         {
