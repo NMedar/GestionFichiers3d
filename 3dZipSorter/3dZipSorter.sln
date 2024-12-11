@@ -7,6 +7,13 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "3dZipSorter", "3dZipSorter.
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "3dZipSorter.Tests", "..\3dZipSorter.Tests\3dZipSorter.Tests.csproj", "{17479843-3BE8-4468-A2F8-B16696622CD3}"
 EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "3dZipSorter.UI", "..\3dZipSorter.UI\3dZipSorter.UI.csproj", "{AB630AA0-BD6E-4ECA-AA17-D6E4DF97E6B8}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Éléments de solution", "Éléments de solution", "{3D44DAB0-8E50-45B1-BF79-E6F8A13A5737}"
+	ProjectSection(SolutionItems) = preProject
+		..\fileExtensions.json = ..\fileExtensions.json
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -21,6 +28,10 @@ Global
 		{17479843-3BE8-4468-A2F8-B16696622CD3}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{17479843-3BE8-4468-A2F8-B16696622CD3}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{17479843-3BE8-4468-A2F8-B16696622CD3}.Release|Any CPU.Build.0 = Release|Any CPU
+		{AB630AA0-BD6E-4ECA-AA17-D6E4DF97E6B8}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{AB630AA0-BD6E-4ECA-AA17-D6E4DF97E6B8}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{AB630AA0-BD6E-4ECA-AA17-D6E4DF97E6B8}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{AB630AA0-BD6E-4ECA-AA17-D6E4DF97E6B8}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
