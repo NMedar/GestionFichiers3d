@@ -34,7 +34,7 @@
                 </DataTemplate>
             </ComboBox.ItemTemplate>
         </ComboBox>
-        <Button Grid.Row="0" Grid.Column="2" Margin="5" Content="lets go" Click="Action_Click" />
+        <Button x:Name="ActionButton" Grid.Row="0" Grid.Column="2" Margin="5" Content="lets go" Click="Action_Click" Visibility="Collapsed"/>
         
         <!-- Label et champ pour le dossier source -->
         <Label Grid.Row="1" Grid.Column="0" VerticalAlignment="Center">Dossier Source :</Label>

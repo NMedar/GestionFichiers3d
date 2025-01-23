@@ -60,7 +60,7 @@ namespace _3dZipSorter.fonctions
                 }
 
                 Trier_Archives trier_Archives = new Trier_Archives();
-                trier_Archives.Executer(dossierSource, dossierDestination, fileExtensions);
+                trier_Archives.Executer(dossierSource, dossierDestination, fileExtensions, message => Console.WriteLine(message));
                 Console.WriteLine("Souhaitez-vous organiser un nouveau dossier ? Si oui, donnez la nouvelle adresse, sinon appuyez sur Entrée.");
                 dossier = Console.ReadLine();
             }

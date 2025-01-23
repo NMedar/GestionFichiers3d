@@ -9,7 +9,8 @@ namespace _3dZipSorter.fonctions
 {
     public interface IFonction
     {
-        void Executer(string dossierSource, string dossierDestination, Dictionary<string, string> fileExtensions);
-        
+        void Executer(string dossierSource, string dossierDestination, Dictionary<string, string> fileExtensions, Action<string> log);
+
+
     }
 }

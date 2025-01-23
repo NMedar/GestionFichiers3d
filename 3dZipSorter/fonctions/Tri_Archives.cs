@@ -9,7 +9,7 @@ namespace _3dZipSorter.fonctions
 {
     public class Trier_Archives : IFonction
     {
-        public void Executer(string dossierSource, string dossierDestination, Dictionary<string, string> fileExtensions)
+        public void Executer(string dossierSource, string dossierDestination, Dictionary<string, string> fileExtensions, Action<string> log)
         {
             int count = 0;
 
@@ -17,11 +17,11 @@ namespace _3dZipSorter.fonctions
             var archives = Directory.GetFiles(dossierSource, "*.zip")
                             .Concat(Directory.GetFiles(dossierSource, "*.rar"))
                              .Concat(Directory.GetFiles(dossierSource, "*.7z"));
-            Console.WriteLine($" {archives.Count()} archives trouvé");
+            log($" {archives.Count()} archives trouvé");
 
             if (!archives.Any())
             {
-                Console.WriteLine("Aucune archive présente dans le dossier : " + dossierSource);
+                log("Aucune archive présente dans le dossier : " + dossierSource);
                 return;
             }
 
@@ -39,7 +39,7 @@ namespace _3dZipSorter.fonctions
                         foreach (var entry in archive.Entries.Where(entry => !entry.IsDirectory))
                         {
                             string extension = Path.GetExtension(entry.Key).ToLower();
-                            //Console.WriteLine($"Fichier : {entry.Key} avec extension : {extension}");
+                            //log($"Fichier : {entry.Key} avec extension : {extension}");
 
                             // Si l'extension du fichier est dans la liste des extensions recherchées
                             if (fileExtensions.TryGetValue(extension, out TypeDeFichier))
@@ -50,7 +50,7 @@ namespace _3dZipSorter.fonctions
 
                             else if (extension == ".zip" || extension == ".rar" || extension == ".7z")
                             {
-                                Console.WriteLine($"Ouverture de l'archive imbriquée : {entry.Key} dans l'archive {archivePath}");
+                                log($"Ouverture de l'archive imbriquée : {entry.Key} dans l'archive {archivePath}");
                                 // Ouvre l'archive imbriquée directement depuis le flux
                                 using (var entryStream = entry.OpenEntryStream())
                                 using (var memoryStream = new MemoryStream())
@@ -71,7 +71,7 @@ namespace _3dZipSorter.fonctions
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine($"Erreur lors de l'ouverture de l'archive : {archivePath}. Message d'erreur : {ex.Message}");
+                    log($"Erreur lors de l'ouverture de l'archive : {archivePath}. Message d'erreur : {ex.Message}");
 
                     // Créer le dossier pour les archives corrompues si nécessaire
                     Directory.CreateDirectory(dossierCorompu);
@@ -83,13 +83,13 @@ namespace _3dZipSorter.fonctions
                         try
                         {
                             File.Move(archivePath, corruptedArchivePath);
-                            Console.WriteLine($"L'archive {archivePath} a été déplacée dans le dossier 'cassée'.");
+                            log($"L'archive {archivePath} a été déplacée dans le dossier 'cassée'.");
                         }
-                        catch (Exception moveEx) { Console.WriteLine($"Erreur lors du déplacement de l'archive corrompue : {moveEx.Message}"); }
+                        catch (Exception moveEx) { log($"Erreur lors du déplacement de l'archive corrompue : {moveEx.Message}"); }
                     }
                     else
                     {
-                        Console.WriteLine($"L'archive {archivePath} existe déjà dans le dossier 'cassée'.");
+                        log($"L'archive {archivePath} existe déjà dans le dossier 'cassée'.");
                     }
 
                     // Continuer à la prochaine archive sans interrompre le programme
@@ -99,12 +99,12 @@ namespace _3dZipSorter.fonctions
                 // Si un fichier a été trouvé, on déplace l'archive dans le dossier correspondant
                 if (fichierTrouve)
                 {
-                    deplaceElement.deplacement(archivePath, dossierDestination, TypeDeFichier);
+                    deplaceElement.deplacement(archivePath, dossierDestination);
                     count++;
                 }
             }
 
-            Console.WriteLine($"Classement des archives terminé. {count} archives rangées.");
+            log($"Classement des archives terminé. {count} archives rangées.");
             count = 0;
         }
     }

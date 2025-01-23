@@ -1,92 +1,89 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+
+
 
 namespace _3dZipSorter.fonctions
 {
     public class OrganisationDossiers : IFonction
     {
-        public void Executer(string? dossier, string textureSansModelDestination, Dictionary<string, string> fileExtensions)
+        public void Executer(string? dossier, string textureSansModelDestination, Dictionary<string, string> fileExtensions, Action<string> log)
         {
+            // Validation des entrées
             if (string.IsNullOrEmpty(dossier) || !Directory.Exists(dossier))
             {
-                Console.WriteLine("Le dossier spécifié n'existe pas.");
+                log("Le dossier spécifié n'existe pas.");
                 return;
             }
 
-            List<string> projetsSansMiniature = new List<string>(); // Liste des projets sans image
-
-            // Vérifier la racine pour des fichiers Blender
-            var fichiersBlender = Directory.GetFiles(dossier, "*.blend");
-            foreach (var fichier in fichiersBlender)
+            if (string.IsNullOrEmpty(textureSansModelDestination) || !Directory.Exists(textureSansModelDestination))
             {
-                // Placer chaque fichier dans un dossier du même nom
-                string dossierCible = Path.Combine(dossier, Path.GetFileNameWithoutExtension(fichier));
-                Directory.CreateDirectory(dossierCible);
-                File.Move(fichier, Path.Combine(dossierCible, Path.GetFileName(fichier)));
+                log("Le dossier de destination est invalide.");
+                return;
             }
 
-            // Placer les dossiers contenant "texture" dans "dossier_sans_famille"
-            string dossierSansFamille = Path.Combine(textureSansModelDestination, "'\'dossier_sans_famille");
-            Directory.CreateDirectory(dossierSansFamille);
+            List<string> projetsSansMiniature = new List<string>();
 
-            var dossiersTexture = Directory.GetDirectories(dossier, "*texture*");
-            foreach (var dossierTexture in dossiersTexture)
+            // Déplacer chaque fichier .blend dans son propre dossier
+            foreach (var fichier in Directory.GetFiles(dossier, "*.blend"))
+            {
+                string nomDossier = Path.GetFileNameWithoutExtension(fichier);
+                deplaceElement.deplacement(fichier, dossier);
+            }
+
+            // Déplacer les dossiers nommés "_texture_" dans le dossier texture orpheline
+            string dossierTexturesOrphelines = Path.Combine(textureSansModelDestination, "textures orphelines");
+            Directory.CreateDirectory(dossierTexturesOrphelines);
+            foreach (var dossierTexture in Directory.GetDirectories(dossier, "*texture*", SearchOption.TopDirectoryOnly))
             {
                 string nomDossier = Path.GetFileName(dossierTexture);
-                string nouveauNomDossier = nomDossier;
-
-                // Si un dossier avec le même nom existe, ajouter "1" à la fin du nom
-                string destinationPath = Path.Combine(dossierSansFamille, nouveauNomDossier);
-                int i = 1;
-                while (Directory.Exists(destinationPath))
-                {
-                    nouveauNomDossier = $"{nomDossier}{i}";
-                    destinationPath = Path.Combine(dossierSansFamille, nouveauNomDossier);
-                    i++;
-                }
-
-                // Déplacer le dossier dans dossier_sans_famille
-                Directory.Move(dossierTexture, destinationPath);
+                string destinationPath = Path.Combine(dossierTexturesOrphelines, nomDossier);
+                deplaceElement.deplacement(dossierTexture, destinationPath);
             }
 
-            // Parcourir chaque dossier pour réorganiser les sous-dossiers
-            var sousDossiers = Directory.GetDirectories(dossier);
-            foreach (var sousDossier in sousDossiers)
+            // Parcourir chaque sous-dossier pour réorganiser
+            foreach (var sousDossier in Directory.GetDirectories(dossier))
             {
                 var contenu = Directory.GetFileSystemEntries(sousDossier);
-
-                // Si un dossier ne contient qu'un seul sous-dossier, remonter le contenu
+                // Si un dossier contient un seul sous-dossier, remontez son contenu
                 if (contenu.Length == 1 && Directory.Exists(contenu[0]))
                 {
                     string sousSousDossier = contenu[0];
                     foreach (var item in Directory.GetFileSystemEntries(sousSousDossier))
                     {
                         string nouveauChemin = Path.Combine(sousDossier, Path.GetFileName(item));
-                        if (Directory.Exists(item))
-                        {
-                            Directory.Move(item, nouveauChemin);
-                        }
-                        else
-                        {
-                            File.Move(item, nouveauChemin);
-                        }
+                        deplaceElement.deplacement(item, nouveauChemin);
                     }
-                    Directory.Delete(sousSousDossier); // Supprimer le dossier vide
+                    Directory.Delete(sousSousDossier); // Supprimez le dossier vide
                 }
 
-                // Si le dossier ne contient pas d'image, ajouter son nom à la liste des projets sans miniature
-                if (!Directory.GetFiles(sousDossier, "*.png").Any() && !Directory.GetFiles(sousDossier, "*.jpg").Any())
+                // Vérifiez la présence d'images dans le dossier
+                var extensionsImages = new[] { ".png", ".jpg", ".jpeg", ".bmp", ".tiff",".webp" };
+                bool contientImage = extensionsImages.Any(ext => Directory.GetFiles(sousDossier, $"*{ext}").Any());
+                if (!contientImage)
                 {
                     projetsSansMiniature.Add(Path.GetFileName(sousDossier));
                 }
+                // Ajoutez un dossier "_Textures" si manquant
+                string dossierTextures = Path.Combine(sousDossier, $"{Path.GetFileName(sousDossier)}_Textures");
+                if (!Directory.Exists(dossierTextures))
+                {
+                    Directory.CreateDirectory(dossierTextures);
+                }
             }
 
-            // Enregistrer la liste des projets sans miniature dans un fichier texte à la racine
-            string cheminListe = Path.Combine(dossier, "'\'projets_sans_miniature.txt");
-            File.WriteAllLines(cheminListe, projetsSansMiniature);
+            // Sauvegarder la liste des projets sans miniature
+            try
+            {
+                string cheminListe = Path.Combine(dossier, "projets_sans_miniature.txt");
+                File.WriteAllLines(cheminListe, projetsSansMiniature);
+            }
+            catch (Exception ex)
+            {
+                log($"Erreur lors de l'écriture du fichier : {ex.Message}");
+            }
         }
     }
 }

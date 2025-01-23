@@ -59,7 +59,7 @@ public class ArchivesTrieurTest
 
         // Act
         var archivesTrieur = new _3dZipSorter.fonctions.GestionExtractionArchives();
-        archivesTrieur.Executer(dossierSource, dossierDestination, fileExtensions);
+        archivesTrieur.Executer(dossierSource, dossierDestination, fileExtensions, message => Console.WriteLine(message));
 
         // Assert
         foreach (var ext in fileExtensions)

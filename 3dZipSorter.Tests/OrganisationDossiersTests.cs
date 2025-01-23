@@ -22,7 +22,7 @@ public class OrganisationDossiersTests
         var fileExtensions = new Dictionary<string, string>();
 
         // Act
-        organisationDossiers.Executer(dossierTest, "/chemin/fauxTextureSansModel", fileExtensions);
+        organisationDossiers.Executer(dossierTest, "/chemin/fauxTextureSansModel", fileExtensions, message => Console.WriteLine(message));
 
         // Assert
         string dossierBlender = Path.Combine(dossierTest, "test");

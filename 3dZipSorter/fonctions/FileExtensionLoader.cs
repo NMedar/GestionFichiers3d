@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace _3dZipSorter.fonctions
 {
-    internal class FileExtensionLoader
+    public class FileExtensionLoader
     {
         public static Dictionary<string, string> LoadFileExtensions(string filePath)
         {

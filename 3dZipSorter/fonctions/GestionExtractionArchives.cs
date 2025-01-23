@@ -10,7 +10,7 @@ namespace _3dZipSorter.fonctions
 {
     public class GestionExtractionArchives : IFonction
     {
-        public void Executer(string sourceDirectory, string targetDirectory, Dictionary<string, string> placeholder)
+        public void Executer(string sourceDirectory, string targetDirectory, Dictionary<string, string> placeholder, Action<string> log)
         {
             ExtractArchivesRecursively(sourceDirectory, targetDirectory);
         }

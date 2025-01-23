@@ -1,9 +1,9 @@
 ﻿using _3dZipSorter.fonctions;
 using SharpCompress.Archives;
 
-internal class ExtraireArchive : IFonction
+public class ExtraireArchive : IFonction
 {
-    public void Executer(String dossierSource, string dossierDestination, Dictionary<string, string> fileExtensions)
+    public void Executer(String dossierSource, string dossierDestination, Dictionary<string, string> fileExtensions, Action<string> log)
     {
         int count = 0;
 
@@ -93,7 +93,7 @@ internal class ExtraireArchive : IFonction
             // Si un fichier a été trouvé, on déplace l'archive dans le dossier correspondant
             if (fichierTrouve)
             {
-                deplaceElement.deplacement(archivePath, dossierDestination, TypeDeFichier);
+                deplaceElement.deplacement(archivePath, dossierDestination);
                 count++;
             }
         }

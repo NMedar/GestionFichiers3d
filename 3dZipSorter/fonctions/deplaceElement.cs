@@ -8,23 +8,31 @@ namespace _3dZipSorter.fonctions
 {
     internal class deplaceElement 
     {
-        public static void deplacement(string fichierCible, string dossierSource, string dossierDestination)
+        public static void deplacement(string fichierCible, string dossierDestination)
         {
-            Console.WriteLine($"rangement du fichier {fichierCible} dans le dossier {dossierDestination}");
-            string targetFolder = Path.Combine(dossierSource, dossierDestination);
-            Directory.CreateDirectory(targetFolder); // Créer le dossier si nécessaire
+            int suffix = 2;
+            string destinationPath = Path.Combine(dossierDestination, Path.GetFileName(fichierCible));
 
-            string destinationPath = Path.Combine(targetFolder, Path.GetFileName(fichierCible));
-            
-            // Vérifier si le fichier existe déjà
-            if (!File.Exists(destinationPath))
+            while (Directory.Exists(destinationPath))
             {
-                File.Move(fichierCible, destinationPath);        
+                destinationPath = $"{destinationPath}_{suffix}";
+                suffix++;
             }
+            Directory.CreateDirectory(destinationPath);
+            
+            //on vérifie si la cible à déplacer est un fichier ou un dossier.
+            if (Directory.Exists(fichierCible))
+            Directory.Move(fichierCible, destinationPath);
             else
             {
-                File.Move(fichierCible, destinationPath+"1");
-                Console.WriteLine($"Le fichier {fichierCible} existe déjà dans {targetFolder}.");
+                while (File.Exists(destinationPath))
+                {
+                    string extension = Path.GetExtension(fichierCible);
+                    string baseName = Path.Combine(dossierDestination, Path.GetFileNameWithoutExtension(fichierCible));
+                    destinationPath = $"{baseName}_{suffix}{extension}";
+                    suffix++;
+                }
+                File.Move(fichierCible, destinationPath);
             }
         }
     }

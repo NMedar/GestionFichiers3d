@@ -27,7 +27,7 @@ namespace _3dZipSorter.Tests
             ArchiveExtracteur.Executer(dossierSource, dossierDestination, new Dictionary<string, string> {
                 { ".zip", "ZipFiles" },
                 { ".rar", "RarFiles" }
-            });
+            }, message => Console.WriteLine(message));
 
             // Assert
             // Vérifiez que les fichiers attendus sont présents dans le dossier de destination
