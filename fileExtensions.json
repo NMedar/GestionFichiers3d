@@ -1,0 +1,20 @@
+{
+  ".blend": "Blender",
+  ".gltf": "Fichier_divers/GLTF",
+  ".uasset": "UnrealAssets",
+  ".uproject": "UnrealProjects",
+  ".wav": "Audio",
+  ".fbx": "Fichier_divers/FBX",
+  ".obj": "Fichier_divers/OBJ",
+  ".dae": "Fichier_divers/DAE",
+  ".stl": "Fichier_divers/STL",
+  ".exe": "Executable",
+  ".ztl": "Zbrush",
+  ".c4d": "Cinema4D",
+  ".duf": "Fichier_divers/Duf",
+  ".ma": "Maya",
+  ".mesh": "Fichier_divers/Mesh",
+  ".emd": "Fichier_divers/Emd",
+  ".zpr": "Zbrush",
+  ".glb": "Glb"
+}
