@@ -17,10 +17,13 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Windows.Forms;
+using MahApps.Metro.Controls;
+using ControlzEx.Theming;
+
 
 namespace _3dZipSorter.UI
 {
-    public partial class MainWindow : Window
+    public partial class MainWindow : MetroWindow
     {
         public Dictionary<string, string> Modes { get; set; }
         private Dictionary<string, string> fileExtensions;
@@ -33,11 +36,23 @@ namespace _3dZipSorter.UI
             { "extraireArchive", typeof(ExtraireArchive) },
         };
 
+        private Dictionary<string, string> modesOrganisation = new Dictionary<string, string>
+    {
+        { "rangement des fichiers blenders", "DéplacementFichiersBlend" },
+        { "rangement des textures", "DéplacementDossiersTextures" },
+        { "rangement des dossiers", "RéorganisationDossiers" },
+        { "identification des projet sans mignature", "IdentificationProjetsSansMiniature" },
+        { "rangement de l'ensemble des dossiers", ""}
+    };
+
         public MainWindow()
         {
             InitializeComponent();
 
-            string projectDirectory = "S:\\projets\\dev\\3d zip sorter\\3dZipSorter";//AppDomain.CurrentDomain.BaseDirectory;
+            SelecteurFonctionOrganisation.ItemsSource = modesOrganisation;
+            SelecteurFonctionOrganisation.SelectedValuePath = "Value";
+
+            string projectDirectory = AppDomain.CurrentDomain.BaseDirectory;
             string filePath = System.IO.Path.Combine(projectDirectory, "fileExtensions.json");
 
             // Initialisation des modes de fonctionnement
@@ -57,11 +72,12 @@ namespace _3dZipSorter.UI
             {
                 // Charger le dictionnaire depuis le fichier JSON
                 fileExtensions = FileExtensionLoader.LoadFileExtensions(filePath);
-                Console.WriteLine("Extensions chargées avec succès !");
+                LogListView.Items.Add("Extensions chargées avec succès !");
             }
             catch (Exception ex)
             {
                 System.Windows.MessageBox.Show($"Erreur lors du chargement des extensions : {ex.Message}");
+                LogListView.Items.Add($"Erreur lors du chargement des extensions : {ex.Message}");
                 fileExtensions = new Dictionary<string, string>(); // Initialise avec un dictionnaire vide en cas d'erreur
             }
         }
@@ -72,15 +88,26 @@ namespace _3dZipSorter.UI
             if (ModeSelector.SelectedItem is KeyValuePair<string, string> selectedMode)
             {
                 ActionButton.Visibility = Visibility.Visible;
-                result.Text += $"Mode sélectionné : {selectedMode.Key}\nDescription : {selectedMode.Value}";
+                LogListView.Items.Add($"Mode sélectionné : {selectedMode.Key}\nDescription : {selectedMode.Value}");
                 if (selectedMode.Key == "organisationDossiers")
                 {
                     DestinationTextBox.Visibility = Visibility.Collapsed;
+                    SelecteurFonctionOrganisation.Visibility = Visibility.Visible;
                 }
                 else
                 {
+                    SelecteurFonctionOrganisation.Visibility = Visibility.Collapsed;
                     DestinationTextBox.Visibility = Visibility.Visible;
                 }
+            }
+        }
+
+        private void SelecteurFonctionOrganisation_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+
+            if (SelecteurFonctionOrganisation.SelectedItem is KeyValuePair<string, string> selectedMode)
+            {
+                string modeSelectionne = selectedMode.Value;
             }
         }
 
@@ -140,20 +167,24 @@ namespace _3dZipSorter.UI
                         // Instanciez dynamiquement la classe et appelez Executer
                         if (Activator.CreateInstance(fonctionType) is IFonction fonctionInstance)
                         {
-                            result.Text += $"Début de l'opération {selectedMode.Key} \n";
-                            fonctionInstance.Executer(dossierSource, dossierDestination, fileExtensions, (message) =>
+                            string[] modeOrganisation= new string[0];
+                            if (selectedMode.Value == "Organisation" && SelecteurFonctionOrganisation.SelectedItem is KeyValuePair<string, string> selectedOrgMode)
+                            {
+                                modeOrganisation.Append(selectedOrgMode.Value);
+                            }
+                            LogListView.Items.Add($"Début de l'opération {selectedMode.Key}");
+                            fonctionInstance.Executer(dossierSource, dossierDestination, fileExtensions,(message) =>
                             {
                                 Dispatcher.Invoke(() =>
                                 {
-                                    result.AppendText(message + Environment.NewLine);
-                                    result.ScrollToEnd();
+                                    LogListView.Items.Add(message + Environment.NewLine);
                                 });
-                            });
-                            result.Text += $"Mode {selectedMode.Key} exécuté avec succès.";
+                            }, modeOrganisation);
+                            LogListView.Items.Add($"Mode {selectedMode.Key} exécuté avec succès.");
                         }
                         else
                         {
-                            result.Text += $"La classe pour {selectedMode.Key} n'implémente pas IFonction. \n";
+                            LogListView.Items.Add($"La classe pour {selectedMode.Key} n'implémente pas IFonction.");
                         }
                     }
                     catch (Exception ex)
@@ -163,12 +194,12 @@ namespace _3dZipSorter.UI
                 }
                 else
                 {
-                    result.Text += "Mode non pris en charge \n";
+                    LogListView.Items.Add("Mode non pris en charge");
                 }
             }
             else
             {
-                result.Text += "Veuillez sélectionner un mode de fonctionnement. \n";
+                LogListView.Items.Add("Veuillez sélectionner un mode de fonctionnement.");
             }
         }
     }
