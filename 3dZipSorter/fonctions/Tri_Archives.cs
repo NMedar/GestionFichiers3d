@@ -51,7 +51,7 @@ namespace _3dZipSorter.fonctions
 
                             else if (extension == ".zip" || extension == ".rar" || extension == ".7z")
                             {
-                                log($"Ouverture de l'archive imbriquée : {entry.Key} dans l'archive {archiveEnTraitement}");
+                                //log($"Ouverture de l'archive imbriquée : {entry.Key} dans l'archive {archiveEnTraitement}");
                                 // Ouvre l'archive imbriquée directement depuis le flux
                                 using (var entryStream = entry.OpenEntryStream())
                                 using (var memoryStream = new MemoryStream())
