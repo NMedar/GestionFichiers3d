@@ -2,6 +2,8 @@
 using System.IO;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.IO.Compression;
+using _3dZipSorter.fonctions;
 
 namespace _3dZipSorter.Tests
 { 
@@ -10,31 +12,43 @@ namespace _3dZipSorter.Tests
         [Fact]
         public void ExtraireArchives_ExtractsCorrectly()
         {
-            // Arrange
+            // Arrange : Création des dossiers temporaires
             var dossierSource = Path.Combine(Path.GetTempPath(), "testSource");
             var dossierDestination = Path.Combine(Path.GetTempPath(), "testDestination");
-
-            _3dZipSorter.fonctions.Trier_Archives ArchiveExtracteur;
-            ArchiveExtracteur = new _3dZipSorter.fonctions.Trier_Archives();
+            if (Directory.Exists(dossierSource))
+                Directory.Delete(dossierSource, true);
+            if (Directory.Exists(dossierDestination))
+                Directory.Delete(dossierDestination, true);
 
             Directory.CreateDirectory(dossierSource);
             Directory.CreateDirectory(dossierDestination);
 
-            // Ajouter une archive test .zip ou .rar dans dossierSource pour simuler l'extraction
-            // Utiliser une méthode d'initialisation pour créer une archive factice ou mocker cette partie
+            // Création d'une archive .zip pour le test
+            string archiveZipPath = Path.Combine(dossierSource, "testArchive.zip");
+            using (var archive = ZipFile.Open(archiveZipPath, ZipArchiveMode.Create))
+            {
+                var entry = archive.CreateEntry("fichierTest.txt");
+                using (var writer = new StreamWriter(entry.Open()))
+                {
+                    writer.Write("Contenu de test");
+                }
+            }
+            var archiveExtracteur = new fonctions.GestionExtractionArchives();
 
-            // Act
-            ArchiveExtracteur.Executer(dossierSource, dossierDestination, new Dictionary<string, string> {
+            Console.WriteLine("DEBUG: Avant d'appeler Executer()");
+            // Act : Exécuter l'extraction
+            archiveExtracteur.Executer(dossierSource, dossierDestination, new Dictionary<string, string> {
                 { ".zip", "ZipFiles" },
                 { ".rar", "RarFiles" }
             }, message => Console.WriteLine(message));
+            Console.WriteLine("DEBUG: Avant d'appeler Executer()");
 
-            // Assert
-            // Vérifiez que les fichiers attendus sont présents dans le dossier de destination
-            Assert.True(Directory.Exists(Path.Combine(dossierDestination, "ZipFiles")));
-            Assert.True(Directory.GetFiles(Path.Combine(dossierDestination, "ZipFiles")).Length > 0);
+            // Assert : Vérifier que le dossier "ZipFiles" a été créé et contient les fichiers extraits
+            string zipOutputFolder = Path.Combine(dossierDestination, "testArchive");
+            Assert.True(Directory.Exists(zipOutputFolder), "Le dossier ZipFiles doit être créé");
+            Assert.True(Directory.GetFiles(zipOutputFolder).Length > 0, "L'archive ZIP doit être extraite avec au moins un fichier");
 
-            // Clean-up
+            // Clean-up : Suppression des dossiers de test
             Directory.Delete(dossierSource, true);
             Directory.Delete(dossierDestination, true);
         }

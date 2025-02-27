@@ -1,65 +1,70 @@
 ﻿using SharpCompress.Archives;
 using SharpCompress.Common;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace _3dZipSorter.fonctions
 {
     public class GestionExtractionArchives : IFonction
     {
-        public void Executer(string sourceDirectory, string targetDirectory, Dictionary<string, string> placeholder, Action<string> log)
+        public void Executer(String dossierSource, string dossierDestination, Dictionary<string, string> fileExtensions, Action<string> log, params string[] operations)
         {
-            ExtractArchivesRecursively(sourceDirectory, targetDirectory);
-        }
+            int count = 0;
+            string result= string.Empty;
 
-        private void ExtractArchivesRecursively(string sourceDirectory, string targetDirectory)
-        {
-            var archives = Directory.GetFiles(sourceDirectory, "*.*", SearchOption.AllDirectories)
-                            .Where(file => file.EndsWith(".zip") || file.EndsWith(".rar") || file.EndsWith(".7z"))
-                            .ToList();
+            // Obtenir toutes les archives dans le dossier source
+            var archives = Directory.GetFiles(dossierSource, "*.zip")
+                            .Concat(Directory.GetFiles(dossierSource, "*.rar"))
+                             .Concat(Directory.GetFiles(dossierSource, "*.7z"));
+            log?.Invoke($" {archives.Count()} archives trouvé");
+
+            if (archives.Count() < 1)
+            {
+                log?.Invoke("Aucune archive présente dans le dossier : " + dossierSource);
+                return;
+            }
+            var archiveExtracteur = new fonctions.ExtraireArchive();
 
             foreach (var archivePath in archives)
             {
+                string dossierCorompu = Path.Combine(dossierDestination, "corrompues"); // Dossier pour les archives corrompues
+
+                // Utilisation de SharpCompress pour ouvrir les archives .zip et .rar
                 try
                 {
-                    using (var archive = ArchiveFactory.Open(archivePath))
-                    {
-                        foreach (var entry in archive.Entries.Where(entry => !entry.IsDirectory))
+                    result = archiveExtracteur.ExtractArchivesRecursively(archivePath, dossierDestination);
+                    if (result == "7z") archiveExtracteur = new fonctions.ExtraireArchive();
+                    else if (result == "erreur")
+                    { // Déplacer l'archive dans le dossier "cassée"
+                        Directory.CreateDirectory(dossierCorompu);
+                        string corruptedArchivePath = Path.Combine(dossierCorompu, Path.GetFileName(archivePath));
+                        if (!File.Exists(corruptedArchivePath))
                         {
-                            string extractionPath = Path.Combine(targetDirectory, entry.Key);
-
-                            // Si c'est encore une archive, traiter récursivement
-                            if (Path.GetExtension(entry.Key).ToLower() == ".zip" || Path.GetExtension(entry.Key).ToLower() == ".rar")
+                            try
                             {
-                                using (var entryStream = entry.OpenEntryStream())
-                                {
-                                    string tempFilePath = Path.Combine(Path.GetTempPath(), entry.Key);
-                                    using (var tempFile = File.Create(tempFilePath))
-                                    {
-                                        entryStream.CopyTo(tempFile);
-                                    }
-                                    ExtractArchivesRecursively(Path.GetDirectoryName(tempFilePath), targetDirectory); // Récursion
-                                }
+                                File.Move(archivePath, corruptedArchivePath);
+                                log?.Invoke($"L'archive {archivePath} a été déplacée dans le dossier 'cassée'.");
                             }
-                            else
-                            {
-                                // Extraire le fichier
-                                entry.WriteToDirectory(targetDirectory, new ExtractionOptions { ExtractFullPath = true, Overwrite = true });
-                            }
+                            catch (Exception moveEx) { log?.Invoke($"Erreur lors du déplacement de l'archive corrompue : {moveEx.Message}"); }
                         }
+                        else
+                        {
+                            log?.Invoke($"L'archive {archivePath} existe déjà dans le dossier 'cassée'.");
+                        }
+                    }
+                    else 
+                    { 
+                        log?.Invoke($"archive : {archivePath} extraite");
+                        
                     }
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine($"Erreur lors du traitement de l'archive {archivePath}: {ex.Message}");
-                    // Optionnel : déplacer l'archive corrompue dans un dossier spécifique
+                    log?.Invoke($"Erreur lors de l'ouverture de l'archive : {archivePath}. Message d'erreur : {ex.Message}");
+                    // Continuer à la prochaine archive sans interrompre le programme
+                    continue;
                 }
             }
+            log?.Invoke($"Classement des archives terminé. {count} archives rangées.");
+            count = 0;
         }
     }
-
-
 }

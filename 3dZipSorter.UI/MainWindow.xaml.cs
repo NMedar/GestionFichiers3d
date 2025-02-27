@@ -1,30 +1,23 @@
-﻿using System.Text;
-using System.Windows;
-using System.Collections.Generic;
+﻿using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
-using System.Windows.Input;
-using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Navigation;
-using System.Windows.Shapes;
-using Microsoft.Win32;
-using System.Net.Sockets;
-using SharpCompress;
 using _3dZipSorter.fonctions;
-using System;
-using System.Collections.Generic;
 using System.IO;
-using System.Windows.Forms;
+using MahApps.Metro.Controls;
+using System.Text.Json;
+using _3dZipSorter.Database;
+using static System.Net.WebRequestMethods;
+using File = System.IO.File;
+using static _3dZipSorter.fonctions.FileExtensionLoader;
+
 
 namespace _3dZipSorter.UI
 {
-    public partial class MainWindow : Window
+    public partial class MainWindow : MetroWindow
     {
-        public Dictionary<string, string> Modes { get; set; }
-        private Dictionary<string, string> fileExtensions;
-        private string dossierSource, dossierDestination = string.Empty;
+        public Dictionary<string, string> Modes { get; set;}
+        private Dictionary<string, string> archiveRegles;
+        public string FileJsonPath { get; set; }
+        private DatabaseManager _databaseManager;
 
         private readonly Dictionary<string, Type> modeFonctions = new Dictionary<string, Type>
         {
@@ -33,11 +26,27 @@ namespace _3dZipSorter.UI
             { "extraireArchive", typeof(ExtraireArchive) },
         };
 
+        private Dictionary<string, string> modesOrganisation = new Dictionary<string, string>
+    {
+        { "rangement des fichiers blenders", "DéplacementFichiersBlend" },
+        { "rangement des textures", "DéplacementDossiersTextures" },
+        { "rangement des dossiers", "RéorganisationDossiers" },
+        { "identification des projet sans mignature", "IdentificationProjetsSansMiniature" },
+        { "rangement de l'ensemble des dossiers", ""}
+    };
+
         public MainWindow()
         {
             InitializeComponent();
 
-            string projectDirectory = "S:\\projets\\dev\\3d zip sorter\\3dZipSorter";//AppDomain.CurrentDomain.BaseDirectory;
+            SelecteurFonctionOrganisation.ItemsSource = modesOrganisation;
+            SelecteurFonctionOrganisation.SelectedValuePath = "Value";
+
+            FileJsonPath = System.IO.Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "fileExtensions.json");
+            DataContext = this; // Liez les données pour le binding
+
+
+            string projectDirectory = AppDomain.CurrentDomain.BaseDirectory;
             string filePath = System.IO.Path.Combine(projectDirectory, "fileExtensions.json");
 
             // Initialisation des modes de fonctionnement
@@ -55,32 +64,102 @@ namespace _3dZipSorter.UI
 
             try
             {
-                // Charger le dictionnaire depuis le fichier JSON
-                fileExtensions = FileExtensionLoader.LoadFileExtensions(filePath);
-                Console.WriteLine("Extensions chargées avec succès !");
+                // Initialisez la base de données
+                string databasePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "3dZipSorter.db");
+                _databaseManager = new DatabaseManager(databasePath);
+
+                // Exemple : Charger les règles de tri des archives
+                archiveRegles = _databaseManager.GetAllArchiveSortingRules();
+                if(archiveRegles.Count<1)
+                {
+                    System.Windows.MessageBox.Show("Aucune règle de tri trouvée dans la base de données.");
+                    LogListView.Items.Add("Aucune règle de tri trouvée dans la base de données.");
+                }
+                else
+                {
+                    System.Windows.MessageBox.Show("Règles de tri chargées avec succès.");
+                }               
             }
             catch (Exception ex)
             {
-                System.Windows.MessageBox.Show($"Erreur lors du chargement des extensions : {ex.Message}");
-                fileExtensions = new Dictionary<string, string>(); // Initialise avec un dictionnaire vide en cas d'erreur
+                System.Windows.MessageBox.Show($"Erreur lors de la création de la base de données : {ex.Message}");
+                LogListView.Items.Add($"Erreur lors de la création de la base de données : {ex.Message}");
+                try 
+                {
+                    //Charger le dictionnaire depuis le fichier JSON
+                    archiveRegles = FileExtensionLoader.LoadFileExtensions(filePath);
+                }
+                catch (Exception ex2)
+                {                    
+                    System.Windows.MessageBox.Show($"Erreur lors du chargement des extensions : {ex2.Message}");
+                    LogListView.Items.Add($"Erreur lors du chargement des extensions : {ex2.Message}");
+                    archiveRegles = new Dictionary<string, string>(); // Initialise avec un dictionnaire vide en cas d'erreur
+                }
             }
         }
 
+        private void SaveSettings_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                // Enregistrez les paramètres (par exemple, le chemin des extensions)
+                var settings = new Dictionary<string, string>
+                {
+                    { "FileExtensionsPath", FileJsonPath }
+                };
+                string json = JsonSerializer.Serialize(settings, new JsonSerializerOptions { WriteIndented = true });
+                File.WriteAllText("settings.json", json);
+                System.Windows.MessageBox.Show("Paramètres enregistrés avec succès !");
+            }
+            catch (Exception ex)
+            {
+                System.Windows.MessageBox.Show($"Erreur lors de l'enregistrement des paramètres : {ex.Message}");
+            }
+        }
+        private void LoadSettings_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                // Chargez les paramètres (par exemple, le chemin des extensions)
+                string settings = File.ReadAllText("settings.json");
+                var jsonSettings = JsonSerializer.Deserialize<Dictionary<string, string>>(settings);
+                if (jsonSettings != null && jsonSettings.ContainsKey("FileExtensionsPath"))
+                {
+                    FileJsonPath = jsonSettings["FileExtensionsPath"];
+                }
+                System.Windows.MessageBox.Show("Paramètres chargés avec succès !");
+            }
+            catch (Exception ex)
+            {
+                System.Windows.MessageBox.Show($"Erreur lors du chargement des paramètres : {ex.Message}");
+            }
+        }
         private void ModeSelector_SelectionChanged(object sender, System.Windows.Controls.SelectionChangedEventArgs e)
         {
             System.Windows.Controls.ComboBox modeSelector = (System.Windows.Controls.ComboBox)FindName("ModeSelector");
             if (ModeSelector.SelectedItem is KeyValuePair<string, string> selectedMode)
             {
                 ActionButton.Visibility = Visibility.Visible;
-                result.Text += $"Mode sélectionné : {selectedMode.Key}\nDescription : {selectedMode.Value}";
+                LogListView.Items.Add($"Mode sélectionné : {selectedMode.Key}\nDescription : {selectedMode.Value}");
                 if (selectedMode.Key == "organisationDossiers")
                 {
                     DestinationTextBox.Visibility = Visibility.Collapsed;
+                    SelecteurFonctionOrganisation.Visibility = Visibility.Visible;
                 }
                 else
                 {
+                    SelecteurFonctionOrganisation.Visibility = Visibility.Collapsed;
                     DestinationTextBox.Visibility = Visibility.Visible;
                 }
+            }
+        }
+
+        private void SelecteurFonctionOrganisation_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+
+            if (SelecteurFonctionOrganisation.SelectedItem is KeyValuePair<string, string> selectedMode)
+            {
+                string modeSelectionne = selectedMode.Value;
             }
         }
 
@@ -140,20 +219,24 @@ namespace _3dZipSorter.UI
                         // Instanciez dynamiquement la classe et appelez Executer
                         if (Activator.CreateInstance(fonctionType) is IFonction fonctionInstance)
                         {
-                            result.Text += $"Début de l'opération {selectedMode.Key} \n";
-                            fonctionInstance.Executer(dossierSource, dossierDestination, fileExtensions, (message) =>
+                            string[] modeOrganisation= new string[0];
+                            if (selectedMode.Value == "Organisation" && SelecteurFonctionOrganisation.SelectedItem is KeyValuePair<string, string> selectedOrgMode)
+                            {
+                                modeOrganisation.Append(selectedOrgMode.Value);
+                            }
+                            LogListView.Items.Add($"Début de l'opération {selectedMode.Key}");
+                            fonctionInstance.Executer(dossierSource, dossierDestination, archiveRegles, (message) =>
                             {
                                 Dispatcher.Invoke(() =>
                                 {
-                                    result.AppendText(message + Environment.NewLine);
-                                    result.ScrollToEnd();
+                                    LogListView.Items.Add(message + Environment.NewLine);
                                 });
-                            });
-                            result.Text += $"Mode {selectedMode.Key} exécuté avec succès.";
+                            }, modeOrganisation);
+                            LogListView.Items.Add($"Mode {selectedMode.Key} exécuté avec succès.");
                         }
                         else
                         {
-                            result.Text += $"La classe pour {selectedMode.Key} n'implémente pas IFonction. \n";
+                            LogListView.Items.Add($"La classe pour {selectedMode.Key} n'implémente pas IFonction.");
                         }
                     }
                     catch (Exception ex)
@@ -163,12 +246,86 @@ namespace _3dZipSorter.UI
                 }
                 else
                 {
-                    result.Text += "Mode non pris en charge \n";
+                    LogListView.Items.Add("Mode non pris en charge");
                 }
             }
             else
             {
-                result.Text += "Veuillez sélectionner un mode de fonctionnement. \n";
+                LogListView.Items.Add("Veuillez sélectionner un mode de fonctionnement.");
+            }
+        }
+
+        private void AddOrUpdateArchiveSortingRule_Click(object sender, RoutedEventArgs e)
+        {
+
+        }
+
+        private void AddOrUpdateFileSortingRule_Click(object sender, RoutedEventArgs e)
+        {
+
+        }
+
+        private void LoadArchiveSortingRules_Click(object sender, RoutedEventArgs e)
+        {
+            //todo : ajouter une vérification pour savoir si le fichier correspond à la structure de la base de données
+            var openFileDialog = new Microsoft.Win32.OpenFileDialog
+            {
+                Filter = "Fichiers JSON (*.json)|*.json|Tous les fichiers (*.*)|*.*",
+                Title = "Sélectionnez un fichier JSON"
+            };
+
+            if (openFileDialog.ShowDialog() == true)
+            {
+                try
+                {
+                    // Lire le contenu du fichier JSON
+                    string jsonContent = File.ReadAllText(openFileDialog.FileName);
+
+                    // Désérialiser le JSON en un dictionnaire
+                    var rules = new Dictionary<string, string>();
+                    if (archiveRegles == null)
+                        rules = LoadFileExtensions(openFileDialog.FileName);
+                    else
+                        rules = LoadFileExtensionsAndUpdate(openFileDialog.FileName, archiveRegles);
+                    if (rules != null)
+                    {
+                        // Ajouter les règles dans la base de données
+                        foreach (var rule in rules)
+                        {
+                            _databaseManager.InsertOrUpdateArchiveSortingRules(rule.Key, rule.Value);
+                        }
+                        // Recharger les règles dans l'interface utilisateur
+                        
+                        System.Windows.MessageBox.Show("Règles chargées avec succès !");
+                    }
+                }
+                catch (Exception ex)
+                {
+                    System.Windows.MessageBox.Show($"Erreur lors du chargement du fichier : {ex.Message}", "Erreur", MessageBoxButton.OK, MessageBoxImage.Error);
+                }
+            }
+        }
+
+        private void LoadFileSortingRules_Click(object sender, RoutedEventArgs e)
+        {
+            //todo : définir la structure de la base de données pour les règles d'organisation des dossiers'
+            //todo : ajouter une vérification pour savoir si le fichier correspond à la structure de la base de données
+            var openFileDialog = new Microsoft.Win32.OpenFileDialog
+            {
+                Filter = "Fichiers JSON (*.json)|*.json|Tous les fichiers (*.*)|*.*",
+                Title = "Sélectionnez un fichier JSON"
+            };
+
+            if (openFileDialog.ShowDialog() == true)
+            {
+                try
+                {
+                    System.Windows.MessageBox.Show("Règles pour gérer l'organision pas encore définis !");
+                }
+                catch (Exception ex)
+                {
+                    System.Windows.MessageBox.Show($"Erreur lors du chargement du fichier : {ex.Message}", "Erreur", MessageBoxButton.OK, MessageBoxImage.Error);
+                }
             }
         }
     }

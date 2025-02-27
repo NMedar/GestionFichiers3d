@@ -32,10 +32,8 @@ public class ArchivesTrieurTest
         private static void CreerArchive(string dossierSource, string fichier, string nomArchive)
         {
             string cheminArchive = Path.Combine(dossierSource, nomArchive);
-
             using (ZipArchive archive = ZipFile.Open(cheminArchive, ZipArchiveMode.Create))
             {
-                // Ajouter le fichier dans l'archive
                 archive.CreateEntryFromFile(fichier, Path.GetFileName(fichier));
             }
         }
@@ -50,15 +48,15 @@ public class ArchivesTrieurTest
 
         var fileExtensions = new Dictionary<string, string>
             {
-                { ".obj", "Models/obj" },
-                { ".fbx", "Models/fbx" },
-                { ".blend", "Models/blend" }
+                { ".obj", "Models\\obj" },
+                { ".fbx", "Models\\fbx" },
+                { ".blend", "Models\\blend" }
             };
 
         PreparationDesArchivesTest.CreerFichiersEtArchives(dossierSource, fileExtensions);
 
         // Act
-        var archivesTrieur = new _3dZipSorter.fonctions.GestionExtractionArchives();
+        var archivesTrieur = new _3dZipSorter.fonctions.Trier_Archives();
         archivesTrieur.Executer(dossierSource, dossierDestination, fileExtensions, message => Console.WriteLine(message));
 
         // Assert
@@ -67,8 +65,8 @@ public class ArchivesTrieurTest
             string expectedDirectory = Path.Combine(dossierDestination, ext.Value);
             Assert.True(Directory.Exists(expectedDirectory), $"Dossier {expectedDirectory} non trouvé.");
 
-            string expectedFile = Path.Combine(expectedDirectory, $"test{ext.Key}");
-            Assert.True(File.Exists(expectedFile), $"Fichier {expectedFile} non trouvé.");
+            string expectedArchivePath = Path.Combine(expectedDirectory, $"archive_{ext.Key.Replace(".", "")}.zip");
+            Assert.True(File.Exists(expectedArchivePath), $"Archive {expectedArchivePath} non trouvée.");
         }
 
         // Clean-up
