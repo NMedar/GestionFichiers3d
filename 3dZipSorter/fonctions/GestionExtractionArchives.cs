@@ -1,11 +1,12 @@
 ﻿using SharpCompress.Archives;
 using SharpCompress.Common;
+using static _3dZipSorter.Database.DatabaseManager;
 
 namespace _3dZipSorter.fonctions
 {
     public class GestionExtractionArchives : IFonction
     {
-        public void Executer(String dossierSource, string dossierDestination, Dictionary<string, string> fileExtensions, Action<string> log, params string[] operations)
+        public void Executer(String dossierSource, string dossierDestination, List<ArchiveSortingRule> fileExtensions, Action<string> log, params string[] operations)
         {
             int count = 0;
             string result= string.Empty;

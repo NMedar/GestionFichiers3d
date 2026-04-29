@@ -4,12 +4,13 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using static _3dZipSorter.Database.DatabaseManager;
 
 namespace _3dZipSorter.fonctions
 {
     public class Trier_Archives : IFonction
     {
-        public void Executer(string cheminArchivesSource, string dossierDestination, Dictionary<string, string> fileExtensions, Action<string> log, params string[] operations)
+        public void Executer(string cheminArchivesSource, string dossierDestination, List<ArchiveSortingRule> fileExtensions, Action<string> log, params string[] operations)
         {
             int count = 0;
             string dossierDestinationModifie = dossierDestination;
@@ -42,10 +43,11 @@ namespace _3dZipSorter.fonctions
                             //log($"Fichier : {entry.Key} avec extension : {extension}");
 
                             // Si l'extension du fichier est dans la liste des extensions recherchées
-                            if (fileExtensions.TryGetValue(extension, out TypeDeFichier))
+                            var rule = fileExtensions.FirstOrDefault(r => r.Extension == extension);
+                            if (rule != null)
                             {
                                 fichierTrouveBool = true;
-                                dossierDestinationModifie = Path.Combine(dossierDestination, TypeDeFichier);
+                                dossierDestinationModifie = Path.Combine(dossierDestination, rule.DestinationFile);
                                 break; // Sortir du foreach car on a trouvé un fichier correspondant
                             }
 

@@ -4,12 +4,13 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using static _3dZipSorter.Database.DatabaseManager;
 
 namespace _3dZipSorter.fonctions
 {
     internal class RechercheArchiveimbriquee
     {
-        public static bool Recherche(IArchive archive, ref string TypeDeFichier, Dictionary<string, string> fileExtensions, int couche)
+        public static bool Recherche(IArchive archive, ref string TypeDeFichier, List<ArchiveSortingRule> fileExtensions, int couche)
         {
             bool fichierTrouve = false;
             foreach (var entry in archive.Entries.Where(e => !e.IsDirectory))
@@ -38,11 +39,16 @@ namespace _3dZipSorter.fonctions
                         }
                     }
                 }
-                
-                else if (fileExtensions.TryGetValue(fileExtension, out TypeDeFichier)) // Si l'extension est dans la liste des extensions recherchées
+
+                else
                 {
-                    fichierTrouve = true;
-                    break; // Sortir si un fichier valide a été trouvé
+                    var rule = fileExtensions.FirstOrDefault(r => r.Extension == fileExtension);
+                    if (rule != null)
+                    {
+                        TypeDeFichier = rule.DestinationFile;
+                        fichierTrouve = true;
+                        break; // Sortir si un fichier valide a été trouvé
+                    }
                 }
             }
             return fichierTrouve;

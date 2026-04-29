@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using static _3dZipSorter.Database.DatabaseManager;
 
 
 
@@ -9,7 +10,7 @@ namespace _3dZipSorter.fonctions
 {
     public class OrganisationDossiers : IFonction
     {
-        public void Executer(string? dossier, string textureSansModelDestination, Dictionary<string, string> fileExtensions, Action<string> log, params string[] operations)
+        public void Executer(string? dossier, string textureSansModelDestination, List<ArchiveSortingRule> fileExtensions, Action<string> log, params string[] operations)
         {
             // Validation des entrées
             if (string.IsNullOrEmpty(dossier) || !Directory.Exists(dossier))
